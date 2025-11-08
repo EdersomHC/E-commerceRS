@@ -2,21 +2,34 @@
 from datetime import date
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS ``
-from flask_login import UserMixin
+from flask_cors import CORS
+from flask_login import UserMixin,login_user, LoginManager, login_required, logout_user, current_user
 # Instância do app
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'teste'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
 CORS(app)
 
+login_manager = LoginManager()
+
+
 # Instância do banco de dados
 db = SQLAlchemy(app)
+login_manager.init_app(app)
+login_manager.login_view = 'login'  
+
 
 # Definir modelo de usuário 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(10), nullable=False)
+    cart = db.relationship('CartItem', backref='user', lazy=True)
+
+#Autenticação de usuário
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -25,9 +38,15 @@ def login():
     user = User.query.filter_by(username=data.get('username')).first()
 
     if user and data.get("password") == user.password:
+            login_user(user)    
             return jsonify({"message": "Login bem-sucedido"}), 200
     return jsonify({"error": "Credenciais inválidas"}), 401
 
+@app.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({"message": "Logout bem-sucedido"}), 200
 
 # Definir modelo de produto
 class Product(db.Model):
@@ -36,8 +55,19 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, nullable=True)
 
-# Criar o banco de dados
+
+# Definir modelo de item do carrinho
+class CartItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)    
+
+
+
+# adicionar produto
 @app.route('/api/products/add', methods=['POST'])
+@login_required
 def add_product():
     data = request.json
     if not data or 'name' not in data or 'price' not in data:
@@ -55,6 +85,7 @@ def add_product():
 
 # Rota para deletar um produto
 @app.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
+@login_required
 def delete_product(product_id):
     product = Product.query.get(product_id)
     if  product:
@@ -79,6 +110,7 @@ def get_product(product_id):
 
 # Rota para atualizar um produto pelo ID    
 @app.route('/api/products/update/<int:product_id>', methods=['PUT'])
+@login_required
 def update_product(product_id):
     product = Product.query.get(product_id)
     if not product:
@@ -112,13 +144,64 @@ def get_all_products():
         })
     return jsonify(products_list)
 
-# Definir rota raiz e a função
-@app.route('/')
-def hello_world():
-    return 'Hello, world!'
+#checkpoint para criar o banco de dados
+@app.route('/api/cart/add/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_cart(product_id):
+    user = User.query.get(int(current_user.id))
+    product = Product.query.get(product_id)
+    
+    if user and product:
+        CartItem_item = CartItem(user_id=user.id, product_id=product.id,)
+        db.session.add(CartItem_item)
+        db.session.commit()
+
+        return jsonify({"message": "Adicionado com sucesso"}), 200
+    return jsonify({"error": "Usuário ou produto não encontrado"}), 404
+
+@approute('api/cart/remove/<int:product_id>', methods=['DELETE'])
+@login_required
+def remove_from_cart(product_id):
+    user = User.query.get(int(current_user.id))
+    product = Product.query.get(product_id)
+    
+    if user and product:
+        cart_item = CartItem.query.filter_by(user_id=user.id, product_id=product.id).first()
+        if cart_item:
+            db.session.delete(cart_item)
+            db.session.commit()
+            return jsonify({"message": "Removido com sucesso"}), 200
+        return jsonify({"error": "Item não encontrado no carrinho"}), 404
+    return jsonify({"error": "Usuário ou produto não encontrado"}), 404
+
+@app.route('/api/cart', methods=['GET'])    
+@login_required
+def view_cart():
+    user = User.query.get(int(current_user.id))
+    cart_items = user.CartIt
+    cart_content = []
+    for cart_item in cart_items:
+        product = Product.query.get(cart_item.product_id)   
+        cart_content.append({
+            "product_id": product.id,
+            "name": product.name,
+            "price": product.price,
+            "quantity": cart_item.quantity
+        })
+
+    return jsonify(cart_content), 200
+
+@app.route('/api/cart/checkout', methods=['POST'])
+@login_required
+def checkout():
+    user = User.query.get(int(current_user.id))
+    cart_items = user.CartIt
+    for item in cart_items:
+        db.session.delete(item)
+    db.session.commit()
+    return jsonify({"message": "Checkout realizado com sucesso"}), 200
 
 
-# Executar o app
 if __name__ == "__main__":
     app.run(debug=True)
 
