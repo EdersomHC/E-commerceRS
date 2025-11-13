@@ -1,5 +1,6 @@
 # Importação
 from datetime import date
+from itertools import product
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -159,20 +160,17 @@ def add_to_cart(product_id):
         return jsonify({"message": "Adicionado com sucesso"}), 200
     return jsonify({"error": "Usuário ou produto não encontrado"}), 404
 
-@approute('api/cart/remove/<int:product_id>', methods=['DELETE'])
+@app.route('/api/cart/remove/<int:product_id>', methods=['DELETE'])
 @login_required
 def remove_from_cart(product_id):
-    user = User.query.get(int(current_user.id))
-    product = Product.query.get(product_id)
     
-    if user and product:
-        cart_item = CartItem.query.filter_by(user_id=user.id, product_id=product.id).first()
+        cart_item = CartItem.query.filter_by(user_id=current_user.id, product_id=product.id).first() 
         if cart_item:
             db.session.delete(cart_item)
             db.session.commit()
             return jsonify({"message": "Removido com sucesso"}), 200
-        return jsonify({"error": "Item não encontrado no carrinho"}), 404
-    return jsonify({"error": "Usuário ou produto não encontrado"}), 404
+        return jsonify({"message": "Item não encontrado no carrinho"}), 404
+    
 
 @app.route('/api/cart', methods=['GET'])    
 @login_required
