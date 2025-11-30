@@ -38,8 +38,7 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          flake8 .  # usa "." para evitar erro se src/ ou tests/ não existirem
-
+          flake8 . 
       - name: Test with pytest
         run: |
           pytest tests/ --maxfail=1 --disable-warnings -q
@@ -59,12 +58,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: npm install
-
+        working-directory: ./frontend
+        
       - name: Run tests
-        run: npm test -- --watchAll=false
+        run: npm test --prefix frontend -- --watchAll=false
