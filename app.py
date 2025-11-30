@@ -159,7 +159,7 @@ def add_to_cart(product_id):
         return jsonify({"message": "Adicionado com sucesso"}), 200
     return jsonify({"error": "Usuário ou produto não encontrado"}), 404
 
-@approute('api/cart/remove/<int:product_id>', methods=['DELETE'])
+@app.route('api/cart/remove/<int:product_id>', methods=['DELETE'])
 @login_required
 def remove_from_cart(product_id):
     user = User.query.get(int(current_user.id))
