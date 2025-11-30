@@ -5,7 +5,9 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_login import UserMixin,login_user, LoginManager, login_required, logout_user, current_user
+
 # Instância do app
+<<<<<<< HEAD:aplication.py
 aplication  = Flask(__name__)
 aplication.config['SECRET_KEY'] = 'teste'
 aplication.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
@@ -13,6 +15,13 @@ CORS(aplication)
 
 login_manager = LoginManager()
 
+=======
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'teste'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
+CORS(app)
+login_manager = LoginManager()
+>>>>>>> origin/master:app.py
 # Instância do banco de dados
 db = SQLAlchemy(aplication)
 login_manager.init_app(aplication)
@@ -73,8 +82,7 @@ def add_product():
     db.session.add(product)
     db.session.commit()
     return jsonify({"message": "produto cadastrado com sucesso"}), 201
-
-
+    
 # Rota para deletar um produto
 @aplication.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
 @login_required
@@ -159,8 +167,13 @@ def remove_from_cart(product_id):
             db.session.commit()
             return jsonify({"message": "Removido com sucesso"}), 200
         return jsonify({"message": "Item não encontrado no carrinho"}), 404
+<<<<<<< HEAD:aplication.py
 
 @aplication.route('/api/cart', methods=['GET'])    
+=======
+    
+@app.route('/api/cart', methods=['GET'])    
+>>>>>>> origin/master:app.py
 @login_required
 def view_cart():
     user = User.query.get(int(current_user.id))
@@ -188,4 +201,8 @@ def checkout():
     return jsonify({"message": "Checkout realizado com sucesso"}), 200
 
 if __name__ == "__main__":
+<<<<<<< HEAD:aplication.py
     aplication.run(debug=True)
+=======
+    app.run(debug=True)
+>>>>>>> origin/master:app.py
