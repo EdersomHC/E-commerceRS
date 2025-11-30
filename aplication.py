@@ -13,12 +13,10 @@ CORS(aplication)
 
 login_manager = LoginManager()
 
-
 # Instância do banco de dados
 db = SQLAlchemy(aplication)
 login_manager.init_app(aplication)
 login_manager.login_view = 'login'  
-
 
 # Definir modelo de usuário 
 class User(db.Model, UserMixin):
@@ -26,7 +24,6 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(10), nullable=False)
     cart = db.relationship('CartItem', backref='user', lazy=True)
-
 #Autenticação de usuário
 @login_manager.user_loader
 def load_user(user_id):
@@ -48,24 +45,18 @@ def login():
 def logout():
     logout_user()
     return jsonify({"message": "Logout bem-sucedido"}), 200
-
 # Definir modelo de produto
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, nullable=True)
-
-
 # Definir modelo de item do carrinho
 class CartItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)    
-
-
-
 # adicionar produto
 @aplication.route('/api/products/add', methods=['POST'])
 @login_required
@@ -108,7 +99,6 @@ def get_product(product_id):
         })
     return jsonify({"ERROR": "Produto não encontrado"}), 404
 
-
 # Rota para atualizar um produto pelo ID    
 @aplication.route('/api/products/update/<int:product_id>', methods=['PUT'])
 @login_required
@@ -129,7 +119,6 @@ def update_product(product_id):
     db.session.commit()  
 
     return jsonify({"message": "Produto atualizado com sucesso"})
-
 
 # Rota para obter todos os produtos
 @aplication.route('/api/products', methods=['GET'])
@@ -170,7 +159,6 @@ def remove_from_cart(product_id):
             db.session.commit()
             return jsonify({"message": "Removido com sucesso"}), 200
         return jsonify({"message": "Item não encontrado no carrinho"}), 404
-    
 
 @aplication.route('/api/cart', methods=['GET'])    
 @login_required
@@ -199,7 +187,5 @@ def checkout():
     db.session.commit()
     return jsonify({"message": "Checkout realizado com sucesso"}), 200
 
-
 if __name__ == "__main__":
     aplication.run(debug=True)
-
