@@ -64,7 +64,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./frontend
+        working-directory: ./frontend/
         
       - name: Run tests
-        run: npm test --prefix frontend -- --watchAll=false
+        run: npm test --workspaces
+        working-directory: ./frontend/
